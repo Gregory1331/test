@@ -176,176 +176,236 @@
 
 // /MainWindow.xaml
 
-// <Window x:Class="Demo.MainWindow"
-//         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-//         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-//         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-//         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-//         xmlns:local="clr-namespace:Demo"
-//         mc:Ignorable="d"
-//         Title="MainWindow" Height="450" Width="800">
-//     <Grid Margin="40">
-//         <Grid.RowDefinitions>
-//             <RowDefinition Height="Auto"/>
-//             <RowDefinition Height="Auto" />
-//             <RowDefinition Height="Auto" />
-//             <RowDefinition Height="Auto" />
-//             <RowDefinition Height="Auto" />
-//         </Grid.RowDefinitions>
+//using System.Windows.Controls;
+//using System.Windows;
 
-//         <Label Content="Логин:" Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,5"/>
-//         <TextBox x:Name="txtLogin" Grid.Row="1" Width="250" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+//using System.Xml.Linq;
 
-//         <Label Content="Пароль:" Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,5"/>
-//         <PasswordBox x:Name="txtPassword" Grid.Row="3" Width="250" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+//< Window x: Class = "Demo.MainWindow"
+//         xmlns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+//         xmlns: x = "http://schemas.microsoft.com/winfx/2006/xaml"
+//         xmlns: d = "http://schemas.microsoft.com/expression/blend/2008"
+//         xmlns: mc = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+//         xmlns: local = "clr-namespace:Demo"
+//         mc: Ignorable = "d"
+//         Title = "MainWindow" Height = "450" Width = "800" >
+//    < Grid Margin = "40" >
+//        < Grid.RowDefinitions >
+//            < RowDefinition Height = "Auto" />
+//            < RowDefinition Height = "Auto" />
+//            < RowDefinition Height = "Auto" />
+//            < RowDefinition Height = "Auto" />
+//            < RowDefinition Height = "Auto" />
+//        </ Grid.RowDefinitions >
 
-//         <Button x:Name="btnLogin" Content="Войти" Grid.Row="4" Width="120" HorizontalAlignment="Center" Click="BtnLogin_Click"/>
-//     </Grid>
+//        < Label Content = "Логин:" Grid.Row = "0" HorizontalAlignment = "Center" Margin = "0,0,0,5" />
+//        < TextBox x: Name = "txtLogin" Grid.Row = "1" Width = "250" HorizontalAlignment = "Center" Margin = "0,0,0,15" />
 
-// </Window>
+//        < Label Content = "Пароль:" Grid.Row = "2" HorizontalAlignment = "Center" Margin = "0,0,0,5" />
+//        < PasswordBox x: Name = "txtPassword" Grid.Row = "3" Width = "250" HorizontalAlignment = "Center" Margin = "0,0,0,20" />
+
+//        < Button x: Name = "btnLogin" Content = "Войти" Grid.Row = "4" Width = "120" HorizontalAlignment = "Center" Click = "BtnLogin_Click" />
+//    </ Grid >
+
+//</ Window >
 
 
 // /MainWindow.xaml.cs
 
-// using System;
-// using System.Windows;
-// using Npgsql;
+//using System;
+//using System.Windows;
+//using Npgsql;
 
-// namespace Demo
-// {
-//     public partial class MainWindow : Window
-//     {
-//         private const string ConnStr = "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres;";
-//         private int failedAttempts = 0;
+//namespace Demo
+//{
+//    public partial class MainWindow : Window
+//    {
+//        private const string ConnStr = "Host=localhost;Port=5432;Database=Hotel;Username=postgres;Password=0987654321;";
+        
+//        public MainWindow() => InitializeComponent();
 
-//         public MainWindow() => InitializeComponent();
+//        private void BtnLogin_Click(object sender, RoutedEventArgs e)
+//        {
+//            if (string.IsNullOrEmpty(txtLogin.Text) || string.IsNullOrEmpty(txtPassword.Password))
+//            {
+//                MessageBox.Show("Логин и пароль обязательны!", "Ошибка", 
+//                    MessageBoxButton.OK, MessageBoxImage.Error);
+//                return;
+//            }
 
-//         private void BtnLogin_Click(object sender, RoutedEventArgs e)
-//         {
-//             if (string.IsNullOrEmpty(txtLogin.Text) || string.IsNullOrEmpty(txtPassword.Password))
-//             {
-//                 MessageBox.Show("Логин и пароль обязательны!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-//                 return;
-//             }
+//            try
+//            {
+//                using (var conn = new NpgsqlConnection(ConnStr))
+//                {
+//                    conn.Open();
+//                    var user = GetUser(conn, txtLogin.Text);
+                    
+//                    if (user == null)
+//                    {
+//                        MessageBox.Show("Пользователь не найден!", "Ошибка", 
+//                            MessageBoxButton.OK, MessageBoxImage.Error);
+//                        return;
+//                    }
 
-//             try
-//             {
-//                 using (var conn = new NpgsqlConnection(ConnStr))
-//                 {
-//                     conn.Open();
-//                     var user = GetUser(conn, txtLogin.Text);
-//                     if (user == null)
-//                     {
-//                         MessageBox.Show("Пользователь не найден!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-//                         return;
-//                     }
+//                    ProcessAuthWithCaptcha(user, conn);
+//                }
+//            }
+//            catch (Exception ex)
+//            {
+//                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", 
+//                    MessageBoxButton.OK, MessageBoxImage.Error);
+//            }
+//        }
 
-//                     ProcessAuthWithCaptcha(user, conn);
-//                 }
-//             }
-//             catch (Exception ex)
-//             {
-//                 MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-//             }
-//         }
+//        private void ProcessAuthWithCaptcha(User user, NpgsqlConnection conn)
+//        {
+//            var captchaWindow = new CaptchaWindow();
+//            if (captchaWindow.ShowDialog() != true || 
+//                captchaWindow.EnteredCode != captchaWindow.CaptchaCode)
+//            {
+//                MessageBox.Show("Неверный код капчи!", "Ошибка", 
+//                    MessageBoxButton.OK, MessageBoxImage.Error);
+//                return;
+//            }
 
-//         private void ProcessAuthWithCaptcha(User user, NpgsqlConnection conn)
-//         {
-//             // Показываем капчу при любой неудачной попытке
-//             var captchaWindow = new CaptchaWindow();
-//             if (captchaWindow.ShowDialog() != true ||
-//                 captchaWindow.EnteredCode != captchaWindow.CaptchaCode)
-//             {
-//                 MessageBox.Show("Неверный код капчи!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-//                 return;
-//             }
+//            if (txtPassword.Password != user.Password)
+//            {
+//                HandleFailedLoginAttempt(user, conn);
+//                return;
+//            }
 
-//             // Проверяем пароль только после успешной капчи
-//             if (txtPassword.Password != user.Password)
-//             {
-//                 failedAttempts++;
-//                 int attempts = user.Count + 1;
+//            if (!user.Active)
+//            {
+//                MessageBox.Show("Аккаунт заблокирован!", "Ошибка", 
+//                    MessageBoxButton.OK, MessageBoxImage.Error);
+//                return;
+//            }
 
-//                 if (attempts >= 3)
-//                 {
-//                     BlockUser(conn, txtLogin.Text);
-//                     return;
-//                 }
+//            CheckFirstLoginAndProceed(user, conn);
+//        }
 
-//                 UpdateCount(conn, txtLogin.Text, attempts);
-//                 MessageBox.Show($"Неверный пароль! Осталось попыток: {3 - attempts}",
-//                               "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-//                 return;
-//             }
+//        private void HandleFailedLoginAttempt(User user, NpgsqlConnection conn)
+//        {
+//            int attempts = user.Count + 1;
+//            if (attempts >= 3)
+//            {
+//                BlockUser(conn, user.Login);
+//                return;
+//            }
 
-//             // Успешная авторизация
-//             failedAttempts = 0;
-//             ResetCount(conn, txtLogin.Text);
-//             OpenAppWindow(user);
-//         }
+//            UpdateCount(conn, user.Login, attempts);
+//            MessageBox.Show($"Неверный пароль! Осталось попыток: {3 - attempts}",
+//                          "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+//        }
 
-//         private User GetUser(NpgsqlConnection conn, string login)
-//         {
-//             using (var cmd = new NpgsqlCommand("SELECT surname, password, role_id, count, date, active FROM users WHERE login = @login", conn))
-//             {
-//                 cmd.Parameters.AddWithValue("@login", login);
-//                 using (var reader = cmd.ExecuteReader())
-//                 {
-//                     if (!reader.Read()) return null;
-//                     return new User
-//                     {
-//                         Surname = reader.GetString(0),
-//                         Password = reader.GetString(1),
-//                         RoleId = reader.GetInt32(2),
-//                         Count = reader.GetInt32(3),
-//                         Date = reader.IsDBNull(4) ? null : (DateTime?)reader.GetDateTime(4),
-//                         Active = reader.GetBoolean(5)
-//                     };
-//                 }
-//             }
-//         }
+//        private void CheckFirstLoginAndProceed(User user, NpgsqlConnection conn)
+//        {
+//            bool isFirstLogin = !user.Date.HasValue;
 
-//         private void BlockUser(NpgsqlConnection conn, string login)
-//         {
-//             ExecuteQuery(conn, "UPDATE users SET active = false, count = 0 WHERE login = @login", ("@login", login));
-//             MessageBox.Show("Аккаунт заблокирован!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-//         }
+//            if (isFirstLogin)
+//            {
+//                OpenPasswordChangeWindow(user.Id);
+//                this.Close();
+//            }
+//            else
+//            {
+//                CheckAccountActivity(user, conn);
+//                OpenAppWindow(user);
+//            }
+//        }
 
-//         private void UpdateCount(NpgsqlConnection conn, string login, int count) =>
-//             ExecuteQuery(conn, "UPDATE users SET count = @count WHERE login = @login", ("@count", count), ("@login", login));
+//        private void OpenPasswordChangeWindow(int userId)
+//        {
+//            var changePassWindow = new ChangePassword(userId);
+//            changePassWindow.Closed += (s, args) => Application.Current.Shutdown();
+//            changePassWindow.Show();
+//        }
 
-//         private void ResetCount(NpgsqlConnection conn, string login) =>
-//             ExecuteQuery(conn, "UPDATE users SET count = 0, date = NOW() WHERE login = @login", ("@login", login));
+//        private void CheckAccountActivity(User user, NpgsqlConnection conn)
+//        {
+//            if ((DateTime.Now - user.Date.Value).TotalDays > 30)
+//            {
+//                BlockUser(conn, user.Login);
+//                MessageBox.Show("Аккаунт заблокирован из-за неактивности.", "Ошибка", 
+//                    MessageBoxButton.OK, MessageBoxImage.Error);
+//                Application.Current.Shutdown();
+//            }
+//        }
 
-//         private void ExecuteQuery(NpgsqlConnection conn, string sql, params (string, object)[] parameters)
-//         {
-//             using (var cmd = new NpgsqlCommand(sql, conn))
-//             {
-//                 foreach (var (name, value) in parameters) cmd.Parameters.AddWithValue(name, value);
-//                 cmd.ExecuteNonQuery();
-//             }
-//         }
+//        private User GetUser(NpgsqlConnection conn, string login)
+//        {
+//            using (var cmd = new NpgsqlCommand(
+//                "SELECT id, surname, password, role_id, count, date, active, login FROM users WHERE login = @login", conn))
+//            {
+//                cmd.Parameters.AddWithValue("@login", login);
+//                using (var reader = cmd.ExecuteReader())
+//                {
+//                    if (!reader.Read()) return null;
+//                    return new User
+//                    {
+//                        Id = reader.GetInt32(0),
+//                        Surname = reader.GetString(1),
+//                        Password = reader.GetString(2),
+//                        RoleId = reader.GetInt32(3),
+//                        Count = reader.GetInt32(4),
+//                        Date = reader.IsDBNull(5) ? null : (DateTime?)reader.GetDateTime(5),
+//                        Active = reader.GetBoolean(6),
+//                        Login = reader.GetString(7)
+//                    };
+//                }
+//            }
+//        }
 
-//         private void OpenAppWindow(User user)
-//         {
-//             MessageBox.Show($"Добро пожаловать, {user.Surname}!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+//        private void BlockUser(NpgsqlConnection conn, string login)
+//        {
+//            ExecuteQuery(conn, 
+//                "UPDATE users SET active = false, count = 0 WHERE login = @login", 
+//                ("@login", login));
+//            MessageBox.Show("Аккаунт заблокирован!", "Ошибка", 
+//                MessageBoxButton.OK, MessageBoxImage.Error);
+//        }
 
-//             Window nextWindow = user.RoleId == 3 ? (Window)new UserWindow() : new AdminWindow();
-//             nextWindow.Show();
-//             this.Close();
-//         }
+//        private void UpdateCount(NpgsqlConnection conn, string login, int count) =>
+//            ExecuteQuery(conn, 
+//                "UPDATE users SET count = @count WHERE login = @login", 
+//                ("@count", count), ("@login", login));
 
-//         private class User
-//         {
-//             public string Surname { get; set; }
-//             public string Password { get; set; }
-//             public int RoleId { get; set; }
-//             public int Count { get; set; }
-//             public DateTime? Date { get; set; }
-//             public bool Active { get; set; }
-//         }
-//     }
-// }
+//        private void ExecuteQuery(NpgsqlConnection conn, string sql, params (string, object)[] parameters)
+//        {
+//            using (var cmd = new NpgsqlCommand(sql, conn))
+//            {
+//                foreach (var (name, value) in parameters) 
+//                    cmd.Parameters.AddWithValue(name, value);
+//                cmd.ExecuteNonQuery();
+//            }
+//        }
+
+//        private void OpenAppWindow(User user)
+//        {
+//            MessageBox.Show($"Добро пожаловать, {user.Surname}!", "Успех", 
+//                MessageBoxButton.OK, MessageBoxImage.Information);
+
+//            Window nextWindow = user.RoleId == 3 
+//                ? (Window)new UserWindow() 
+//                : new AdminWindow();
+            
+//            nextWindow.Show();
+//            this.Close();
+//        }
+
+//        private class User
+//        {
+//            public int Id { get; set; }
+//            public string Surname { get; set; }
+//            public string Password { get; set; }
+//            public int RoleId { get; set; }
+//            public int Count { get; set; }
+//            public DateTime? Date { get; set; }
+//            public bool Active { get; set; }
+//            public string Login { get; set; }
+//        }
+//    }
+//}
 
 
 
@@ -354,328 +414,328 @@
 
 // /AdminWindow.xaml
 
-// <Window x:Class="Demo.AdminWindow"
-//         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-//         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-//         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-//         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-//         xmlns:local="clr-namespace:Demo"
-//         mc:Ignorable="d"
-//         Title="Управление пользователями"
-//         Height="600" Width="900"
-//         WindowStartupLocation="CenterScreen"
-//         FontFamily="Segoe UI" FontSize="14">
-//     <Grid>
-//         <Label x:Name="Label1" Content="Добавление пользователей. Изменение данных пользователей."
-//            HorizontalAlignment="Left" Height="30" Margin="48,6,0,0" VerticalAlignment="Top"/>
-//         <Label x:Name="Label2" Content="Имя нового пользователя" HorizontalAlignment="Left" Height="40" Margin="48,46,0,0"
-//            VerticalAlignment="Top"/>
-//         <Label x:Name="Label3" Content="Введите пароль" HorizontalAlignment="Left" Height="30" Margin="48,90,0,0"
-//            VerticalAlignment="Top"/>
-//         <Label x:Name="Label4" Content="Выберите роль пользователя" HorizontalAlignment="Left" Height="30" Margin="48,135,0,0"
-//            VerticalAlignment="Top"/>
-//         <Label x:Name="Label5" Content="Фамилия" HorizontalAlignment="Left" Height="30" Margin="48,180,0,0"
-//            VerticalAlignment="Top"/>
-//         <Label x:Name="Label6" Content="Имя" HorizontalAlignment="Left" Height="30" Margin="300,180,0,0"
-//            VerticalAlignment="Top"/>
-//         <Label x:Name="Label7" Content="Отчество" HorizontalAlignment="Left" Height="30" Margin="500,180,0,0"
-//            VerticalAlignment="Top"/>
+//< Window x: Class = "Demo.AdminWindow"
+//         xmlns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+//         xmlns: x = "http://schemas.microsoft.com/winfx/2006/xaml"
+//         xmlns: d = "http://schemas.microsoft.com/expression/blend/2008"
+//         xmlns: mc = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+//         xmlns: local = "clr-namespace:Demo"
+//         mc: Ignorable = "d"
+//         Title = "Управление пользователями"
+//         Height = "600" Width = "900"
+//         WindowStartupLocation = "CenterScreen"
+//         FontFamily = "Segoe UI" FontSize = "14" >
+//    < Grid >
+//        < Label x: Name = "Label1" Content = "Добавление пользователей. Изменение данных пользователей."
+//            HorizontalAlignment = "Left" Height = "30" Margin = "48,6,0,0" VerticalAlignment = "Top" />
+//        < Label x: Name = "Label2" Content = "Имя нового пользователя" HorizontalAlignment = "Left" Height = "40" Margin = "48,46,0,0"
+//            VerticalAlignment = "Top" />
+//        < Label x: Name = "Label3" Content = "Введите пароль" HorizontalAlignment = "Left" Height = "30" Margin = "48,90,0,0"
+//            VerticalAlignment = "Top" />
+//        < Label x: Name = "Label4" Content = "Выберите роль пользователя" HorizontalAlignment = "Left" Height = "30" Margin = "48,135,0,0"
+//            VerticalAlignment = "Top" />
+//        < Label x: Name = "Label5" Content = "Фамилия" HorizontalAlignment = "Left" Height = "30" Margin = "48,180,0,0"
+//            VerticalAlignment = "Top" />
+//        < Label x: Name = "Label6" Content = "Имя" HorizontalAlignment = "Left" Height = "30" Margin = "300,180,0,0"
+//            VerticalAlignment = "Top" />
+//        < Label x: Name = "Label7" Content = "Отчество" HorizontalAlignment = "Left" Height = "30" Margin = "500,180,0,0"
+//            VerticalAlignment = "Top" />
 
-//         <TextBox x:Name="TextBox1" HorizontalAlignment="Left" Height="33" Width="250" Margin="248,46,0,0"
-//              TextWrapping="Wrap" VerticalAlignment="Top"/>
-//         <TextBox x:Name="TextBox2" HorizontalAlignment="Left" Height="33" Width="250" Margin="248,90,0,0"
-//              TextWrapping="Wrap" VerticalAlignment="Top"/>
-//         <TextBox x:Name="TextBox3" HorizontalAlignment="Left" Height="33" Width="150" Margin="120,180,0,0"
-//              TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Center"/>
-//         <TextBox x:Name="TextBox4" HorizontalAlignment="Left" Height="33" Width="150" Margin="340,180,0,0"
-//              TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Center"/>
-//         <TextBox x:Name="TextBox5" HorizontalAlignment="Left" Height="33" Width="150" Margin="570,180,0,0"
-//              TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Center"/>
+//        < TextBox x: Name = "TextBox1" HorizontalAlignment = "Left" Height = "33" Width = "250" Margin = "248,46,0,0"
+//              TextWrapping = "Wrap" VerticalAlignment = "Top" />
+//        < TextBox x: Name = "TextBox2" HorizontalAlignment = "Left" Height = "33" Width = "250" Margin = "248,90,0,0"
+//              TextWrapping = "Wrap" VerticalAlignment = "Top" />
+//        < TextBox x: Name = "TextBox3" HorizontalAlignment = "Left" Height = "33" Width = "150" Margin = "120,180,0,0"
+//              TextWrapping = "Wrap" VerticalAlignment = "Top" TextAlignment = "Center" />
+//        < TextBox x: Name = "TextBox4" HorizontalAlignment = "Left" Height = "33" Width = "150" Margin = "340,180,0,0"
+//              TextWrapping = "Wrap" VerticalAlignment = "Top" TextAlignment = "Center" />
+//        < TextBox x: Name = "TextBox5" HorizontalAlignment = "Left" Height = "33" Width = "150" Margin = "570,180,0,0"
+//              TextWrapping = "Wrap" VerticalAlignment = "Top" TextAlignment = "Center" />
 
-//         <ComboBox x:Name="typeRole" FontSize="14" HorizontalAlignment="Left" Height="33" Width="250"
-//               VerticalAlignment="Top" Margin="248,135,0,0"></ComboBox>
+//        < ComboBox x: Name = "typeRole" FontSize = "14" HorizontalAlignment = "Left" Height = "33" Width = "250"
+//               VerticalAlignment = "Top" Margin = "248,135,0,0" ></ ComboBox >
 
-//         <Button x:Name="button3" Content="Добавить" HorizontalAlignment="Left" Height="30" Width="90"
-//             Margin="555,138,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.189,0.601"/>
-//         <Button x:Name="button4" Content="Сохранить изменения" HorizontalAlignment="Left" Height="30" Width="130"
-//             Margin="609,516,0,0" VerticalAlignment="Top" Foreground="White" Background="#FF4B9E44"/>
-//         <Button x:Name="buttonClose" Content="Закрыть" HorizontalAlignment="Left" Height="30" Width="90"
-//             Margin="768,516,0,0" VerticalAlignment="Top" Click="buttonClose_Click" Background="Red" Foreground="White"/>
-//         <Button x:Name="buttonDelete" Content="Удалить" HorizontalAlignment="Left" Height="30" Width="90"
-//             Margin="674,138,0,0" VerticalAlignment="Top" Click="buttonDelete_Click" RenderTransformOrigin="-0.133,0.735"/>
+//        < Button x: Name = "button3" Content = "Добавить" HorizontalAlignment = "Left" Height = "30" Width = "90"
+//             Margin = "555,138,0,0" VerticalAlignment = "Top" RenderTransformOrigin = "0.189,0.601" />
+//        < Button x: Name = "button4" Content = "Сохранить изменения" HorizontalAlignment = "Left" Height = "30" Width = "130"
+//             Margin = "609,516,0,0" VerticalAlignment = "Top" Foreground = "White" Background = "#FF4B9E44" />
+//        < Button x: Name = "buttonClose" Content = "Закрыть" HorizontalAlignment = "Left" Height = "30" Width = "90"
+//             Margin = "768,516,0,0" VerticalAlignment = "Top" Click = "buttonClose_Click" Background = "Red" Foreground = "White" />
+//        < Button x: Name = "buttonDelete" Content = "Удалить" HorizontalAlignment = "Left" Height = "30" Width = "90"
+//             Margin = "674,138,0,0" VerticalAlignment = "Top" Click = "buttonDelete_Click" RenderTransformOrigin = "-0.133,0.735" />
 
-//         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5,230,5,5">
-//             <DataGrid Name="GridUser" AutoGenerateColumns="False" Height="190" MaxWidth="750"
-//                   ScrollViewer.CanContentScroll="True">
-//                 <DataGrid.Columns>
-//                     <DataGridTextColumn Header="ID" Width="*" Binding="{Binding ID}"/>
-//                     <DataGridTextColumn Header="Фамилия" Width="*" Binding="{Binding surname}"/>
-//                     <DataGridTextColumn Header="Имя" Width="*" Binding="{Binding name}"/>
-//                     <DataGridTextColumn Header="Отчество" Width="*" Binding="{Binding othcestvo}"/>
-//                     <DataGridTextColumn Header="Роль" Width="*" Binding="{Binding role2}"/>
-//                     <DataGridTextColumn Header="Логин" Width="*" Binding="{Binding login}"/>
-//                     <DataGridTextColumn Header="Пароль" Width="*" Binding="{Binding password}"/>
-//                     <DataGridTextColumn Header="Кол-во вводов" Width="*" Binding="{Binding count}"/>
-//                     <DataGridTextColumn Header="Активность" Width="*" Binding="{Binding active}"/>
-//                     <DataGridTextColumn Header="Дата входа" Width="*" Binding="{Binding date}"/>
-//                 </DataGrid.Columns>
-//             </DataGrid>
-//         </StackPanel>
-//     </Grid>
-// </Window>
+//        < StackPanel Orientation = "Vertical" HorizontalAlignment = "Center" VerticalAlignment = "Top" Margin = "5,230,5,5" >
+//            < DataGrid Name = "GridUser" AutoGenerateColumns = "False" Height = "190" MaxWidth = "750"
+//                   ScrollViewer.CanContentScroll = "True" >
+//                < DataGrid.Columns >
+//                    < DataGridTextColumn Header = "ID" Width = "*" Binding = "{Binding ID}" />
+//                    < DataGridTextColumn Header = "Фамилия" Width = "*" Binding = "{Binding surname}" />
+//                    < DataGridTextColumn Header = "Имя" Width = "*" Binding = "{Binding name}" />
+//                    < DataGridTextColumn Header = "Отчество" Width = "*" Binding = "{Binding othcestvo}" />
+//                    < DataGridTextColumn Header = "Роль" Width = "*" Binding = "{Binding role2}" />
+//                    < DataGridTextColumn Header = "Логин" Width = "*" Binding = "{Binding login}" />
+//                    < DataGridTextColumn Header = "Пароль" Width = "*" Binding = "{Binding password}" />
+//                    < DataGridTextColumn Header = "Кол-во вводов" Width = "*" Binding = "{Binding count}" />
+//                    < DataGridTextColumn Header = "Активность" Width = "*" Binding = "{Binding active}" />
+//                    < DataGridTextColumn Header = "Дата входа" Width = "*" Binding = "{Binding date}" />
+//                </ DataGrid.Columns >
+//            </ DataGrid >
+//        </ StackPanel >
+//    </ Grid >
+//</ Window >
 
 // /AdminWindow.xaml.cs
 
-// using System;
-// using System.Data;
-// using System.Linq;
-// using System.Windows;
-// using Npgsql;
+//using System;
+//using System.Data;
+//using System.Linq;
+//using System.Windows;
+//using Npgsql;
 
-// namespace Demo
-// {
-//     public partial class AdminWindow : Window
-//     {
-//         private const string ConnectionString = "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres;";
+//namespace Demo
+//{
+//    public partial class AdminWindow : Window
+//    {
+//        private const string ConnectionString = "Host=localhost;Port=5432;Database=Hotel;Username=postgres;Password=0987654321;";
 
-//         public AdminWindow()
-//         {
-//             InitializeComponent();
-//             FixSequence();
-//             LoadRoles();
-//             LoadUsers();
-//             button3.Click += AddUser_Click;
-//             button4.Click += SaveChanges_Click;
-//             buttonClose.Click += buttonClose_Click;
-//             buttonDelete.Click += buttonDelete_Click;
-//         }
+//        public AdminWindow()
+//        {
+//            InitializeComponent();
+//            FixSequence();
+//            LoadRoles();
+//            LoadUsers();
+//            button3.Click += AddUser_Click;
+//            button4.Click += SaveChanges_Click;
+//            buttonClose.Click += buttonClose_Click;
+//            buttonDelete.Click += buttonDelete_Click;
+//        }
 
-//         private void FixSequence()
-//         {
-//             try
-//             {
-//                 using var conn = new NpgsqlConnection(ConnectionString);
-//                 using var cmd = new NpgsqlCommand("SELECT setval(pg_get_serial_sequence('users','id'),COALESCE((SELECT MAX(id) FROM users),0)+1,false)", conn);
-//                 conn.Open();
-//                 cmd.ExecuteNonQuery();
-//             }
-//             catch (Exception ex)
-//             {
-//                 MessageBox.Show($"Ошибка синхронизации ID: {ex.Message}", "Ошибка");
-//             }
-//         }
+//        private void FixSequence()
+//        {
+//            try
+//            {
+//                using var conn = new NpgsqlConnection(ConnectionString);
+//                using var cmd = new NpgsqlCommand("SELECT setval(pg_get_serial_sequence('users','id'),COALESCE((SELECT MAX(id) FROM users),0)+1,false)", conn);
+//                conn.Open();
+//                cmd.ExecuteNonQuery();
+//            }
+//            catch (Exception ex)
+//            {
+//                MessageBox.Show($"Ошибка синхронизации ID: {ex.Message}", "Ошибка");
+//            }
+//        }
 
-//         private void LoadRoles()
-//         {
-//             try
-//             {
-//                 using var conn = new NpgsqlConnection(ConnectionString);
-//                 using var cmd = new NpgsqlCommand("SELECT id,role FROM roles", conn);
-//                 conn.Open();
-//                 typeRole.ItemsSource = cmd.ExecuteReader()
-//                     .Cast<IDataRecord>()
-//                     .Select(r => new { Id = r.GetInt32(0), Name = r.GetString(1) })
-//                     .ToList();
-//                 typeRole.DisplayMemberPath = "Name";
-//                 typeRole.SelectedValuePath = "Id";
-//                 if (typeRole.Items.Count > 0) typeRole.SelectedIndex = 0;
-//             }
-//             catch (Exception ex)
-//             {
-//                 MessageBox.Show($"Ошибка загрузки ролей: {ex.Message}", "Ошибка");
-//             }
-//         }
+//        private void LoadRoles()
+//        {
+//            try
+//            {
+//                using var conn = new NpgsqlConnection(ConnectionString);
+//                using var cmd = new NpgsqlCommand("SELECT id,role FROM roles", conn);
+//                conn.Open();
+//                typeRole.ItemsSource = cmd.ExecuteReader()
+//                    .Cast<IDataRecord>()
+//                    .Select(r => new { Id = r.GetInt32(0), Name = r.GetString(1) })
+//                    .ToList();
+//                typeRole.DisplayMemberPath = "Name";
+//                typeRole.SelectedValuePath = "Id";
+//                if (typeRole.Items.Count > 0) typeRole.SelectedIndex = 0;
+//            }
+//            catch (Exception ex)
+//            {
+//                MessageBox.Show($"Ошибка загрузки ролей: {ex.Message}", "Ошибка");
+//            }
+//        }
 
-//         private void LoadUsers()
-//         {
-//             try
-//             {
-//                 using var conn = new NpgsqlConnection(ConnectionString);
-//                 conn.Open();
-//                 var dt = new DataTable();
-//                 new NpgsqlDataAdapter(
-//                     "SELECT u.id AS \"ID\", u.surname, u.name, u.otchestvo AS \"othcestvo\", " +
-//                     "r.role AS \"role2\", u.login, u.password, u.count, u.active, u.date, u.role_id " +
-//                     "FROM users u JOIN roles r ON u.role_id=r.id", conn).Fill(dt);
-//                 dt.PrimaryKey = new[] { dt.Columns["ID"] };
-//                 GridUser.ItemsSource = dt.DefaultView;
-//             }
-//             catch (Exception ex)
-//             {
-//                 MessageBox.Show($"Ошибка загрузки пользователей: {ex.Message}", "Ошибка");
-//             }
-//         }
+//        private void LoadUsers()
+//        {
+//            try
+//            {
+//                using var conn = new NpgsqlConnection(ConnectionString);
+//                conn.Open();
+//                var dt = new DataTable();
+//                new NpgsqlDataAdapter(
+//                    "SELECT u.id AS \"ID\", u.surname, u.name, u.otchestvo AS \"othcestvo\", " +
+//                    "r.role AS \"role2\", u.login, u.password, u.count, u.active, u.date, u.role_id " +
+//                    "FROM users u JOIN roles r ON u.role_id=r.id", conn).Fill(dt);
+//                dt.PrimaryKey = new[] { dt.Columns["ID"] };
+//                GridUser.ItemsSource = dt.DefaultView;
+//            }
+//            catch (Exception ex)
+//            {
+//                MessageBox.Show($"Ошибка загрузки пользователей: {ex.Message}", "Ошибка");
+//            }
+//        }
 
-//         private void AddUser_Click(object sender, RoutedEventArgs e)
-//         {
-//             if (string.IsNullOrWhiteSpace(TextBox1.Text) || string.IsNullOrWhiteSpace(TextBox2.Text))
-//             {
-//                 MessageBox.Show("Логин и пароль обязательны", "Ошибка");
-//                 return;
-//             }
+//        private void AddUser_Click(object sender, RoutedEventArgs e)
+//        {
+//            if (string.IsNullOrWhiteSpace(TextBox1.Text) || string.IsNullOrWhiteSpace(TextBox2.Text))
+//            {
+//                MessageBox.Show("Логин и пароль обязательны", "Ошибка");
+//                return;
+//            }
 
-//             try
-//             {
-//                 using var conn = new NpgsqlConnection(ConnectionString);
-//                 conn.Open();
-//                 var role = (dynamic)typeRole.SelectedItem;
+//            try
+//            {
+//                using var conn = new NpgsqlConnection(ConnectionString);
+//                conn.Open();
+//                var role = (dynamic)typeRole.SelectedItem;
 
-//                 using (var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM users WHERE login=@login", conn))
-//                 {
-//                     cmd.Parameters.AddWithValue("@login", TextBox1.Text);
-//                     if ((long)cmd.ExecuteScalar() > 0)
-//                     {
-//                         MessageBox.Show("Логин уже существует", "Ошибка");
-//                         return;
-//                     }
-//                 }
+//                using (var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM users WHERE login=@login", conn))
+//                {
+//                    cmd.Parameters.AddWithValue("@login", TextBox1.Text);
+//                    if ((long)cmd.ExecuteScalar() > 0)
+//                    {
+//                        MessageBox.Show("Логин уже существует", "Ошибка");
+//                        return;
+//                    }
+//                }
 
-//                 using (var cmd = new NpgsqlCommand(
-//                     "INSERT INTO users(surname,name,otchestvo,role_id,login,password,count,active,date) " +
-//                     "VALUES(@s,@n,@o,@r,@l,@p,0,true,null)", conn))
-//                 {
-//                     cmd.Parameters.AddWithValue("@s", TextBox3.Text);
-//                     cmd.Parameters.AddWithValue("@n", TextBox4.Text);
-//                     cmd.Parameters.AddWithValue("@o", string.IsNullOrWhiteSpace(TextBox5.Text) ? (object)DBNull.Value : TextBox5.Text);
-//                     cmd.Parameters.AddWithValue("@r", role.Id);
-//                     cmd.Parameters.AddWithValue("@l", TextBox1.Text);
-//                     cmd.Parameters.AddWithValue("@p", TextBox2.Text);
-//                     cmd.ExecuteNonQuery();
-//                     MessageBox.Show("Пользователь добавлен", "Успех");
-//                     ClearForm();
-//                     LoadUsers();
-//                 }
-//             }
-//             catch (Exception ex)
-//             {
-//                 MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
-//             }
-//         }
+//                using (var cmd = new NpgsqlCommand(
+//                    "INSERT INTO users(surname,name,otchestvo,role_id,login,password,count,active,date) " +
+//                    "VALUES(@s,@n,@o,@r,@l,@p,0,true,null)", conn))
+//                {
+//                    cmd.Parameters.AddWithValue("@s", TextBox3.Text);
+//                    cmd.Parameters.AddWithValue("@n", TextBox4.Text);
+//                    cmd.Parameters.AddWithValue("@o", string.IsNullOrWhiteSpace(TextBox5.Text) ? (object)DBNull.Value : TextBox5.Text);
+//                    cmd.Parameters.AddWithValue("@r", role.Id);
+//                    cmd.Parameters.AddWithValue("@l", TextBox1.Text);
+//                    cmd.Parameters.AddWithValue("@p", TextBox2.Text);
+//                    cmd.ExecuteNonQuery();
+//                    MessageBox.Show("Пользователь добавлен", "Успех");
+//                    ClearForm();
+//                    LoadUsers();
+//                }
+//            }
+//            catch (Exception ex)
+//            {
+//                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
+//            }
+//        }
 
-//         private void SaveChanges_Click(object sender, RoutedEventArgs e)
-//         {
-//             try
-//             {
-//                 if (!(GridUser.ItemsSource is DataView dataView)) return;
-//                 using var conn = new NpgsqlConnection(ConnectionString);
-//                 conn.Open();
-//                 var dt = dataView.Table;
-//                 var currentLogins = new DataTable();
-//                 new NpgsqlDataAdapter("SELECT id,login FROM users", conn).Fill(currentLogins);
+//        private void SaveChanges_Click(object sender, RoutedEventArgs e)
+//        {
+//            try
+//            {
+//                if (!(GridUser.ItemsSource is DataView dataView)) return;
+//                using var conn = new NpgsqlConnection(ConnectionString);
+//                conn.Open();
+//                var dt = dataView.Table;
+//                var currentLogins = new DataTable();
+//                new NpgsqlDataAdapter("SELECT id,login FROM users", conn).Fill(currentLogins);
 
-//                 foreach (DataRow row in dt.Rows)
-//                 {
-//                     if (row.RowState == DataRowState.Modified || row.RowState == DataRowState.Added)
-//                     {
-//                         string login = row["login"].ToString();
-//                         int id = row["ID"] is DBNull ? -1 : Convert.ToInt32(row["ID"]);
-//                         if (currentLogins.AsEnumerable().Any(r => r["login"].ToString() == login && Convert.ToInt32(r["id"]) != id))
-//                         {
-//                             MessageBox.Show($"Логин '{login}' уже используется", "Ошибка");
-//                             return;
-//                         }
-//                     }
-//                 }
+//                foreach (DataRow row in dt.Rows)
+//                {
+//                    if (row.RowState == DataRowState.Modified || row.RowState == DataRowState.Added)
+//                    {
+//                        string login = row["login"].ToString();
+//                        int id = row["ID"] is DBNull ? -1 : Convert.ToInt32(row["ID"]);
+//                        if (currentLogins.AsEnumerable().Any(r => r["login"].ToString() == login && Convert.ToInt32(r["id"]) != id))
+//                        {
+//                            MessageBox.Show($"Логин '{login}' уже используется", "Ошибка");
+//                            return;
+//                        }
+//                    }
+//                }
 
-//                 foreach (DataRow row in dt.Rows)
-//                 {
-//                     switch (row.RowState)
-//                     {
-//                         case DataRowState.Modified: UpdateUser(conn, row); break;
-//                         case DataRowState.Added: InsertUser(conn, row); break;
-//                         case DataRowState.Deleted: DeleteUser(conn, row); break;
-//                     }
-//                 }
+//                foreach (DataRow row in dt.Rows)
+//                {
+//                    switch (row.RowState)
+//                    {
+//                        case DataRowState.Modified: UpdateUser(conn, row); break;
+//                        case DataRowState.Added: InsertUser(conn, row); break;
+//                        case DataRowState.Deleted: DeleteUser(conn, row); break;
+//                    }
+//                }
 
-//                 MessageBox.Show("Изменения сохранены", "Успех");
-//                 LoadUsers();
-//             }
-//             catch (Exception ex)
-//             {
-//                 MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
-//             }
-//         }
+//                MessageBox.Show("Изменения сохранены", "Успех");
+//                LoadUsers();
+//            }
+//            catch (Exception ex)
+//            {
+//                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
+//            }
+//        }
 
-//         private void UpdateUser(NpgsqlConnection conn, DataRow row)
-//         {
-//             using var cmd = new NpgsqlCommand(
-//                 "UPDATE users SET surname=@s,name=@n,otchestvo=@o,role_id=@r,login=@l," +
-//                 "password=@p,count=@c,active=@a,date=@d WHERE id=@i", conn);
-//             AddParameters(cmd, row);
-//             cmd.Parameters.AddWithValue("@i", row["ID"]);
-//             cmd.ExecuteNonQuery();
-//         }
+//        private void UpdateUser(NpgsqlConnection conn, DataRow row)
+//        {
+//            using var cmd = new NpgsqlCommand(
+//                "UPDATE users SET surname=@s,name=@n,otchestvo=@o,role_id=@r,login=@l," +
+//                "password=@p,count=@c,active=@a,date=@d WHERE id=@i", conn);
+//            AddParameters(cmd, row);
+//            cmd.Parameters.AddWithValue("@i", row["ID"]);
+//            cmd.ExecuteNonQuery();
+//        }
 
-//         private void InsertUser(NpgsqlConnection conn, DataRow row)
-//         {
-//             using var cmd = new NpgsqlCommand(
-//                 "INSERT INTO users(surname,name,otchestvo,role_id,login,password,count,active,date) " +
-//                 "VALUES(@s,@n,@o,@r,@l,@p,@c,@a,@d)", conn);
-//             AddParameters(cmd, row);
-//             cmd.ExecuteNonQuery();
-//         }
+//        private void InsertUser(NpgsqlConnection conn, DataRow row)
+//        {
+//            using var cmd = new NpgsqlCommand(
+//                "INSERT INTO users(surname,name,otchestvo,role_id,login,password,count,active,date) " +
+//                "VALUES(@s,@n,@o,@r,@l,@p,@c,@a,@d)", conn);
+//            AddParameters(cmd, row);
+//            cmd.ExecuteNonQuery();
+//        }
 
-//         private void DeleteUser(NpgsqlConnection conn, DataRow row)
-//         {
-//             using var cmd = new NpgsqlCommand("DELETE FROM users WHERE id=@i", conn);
-//             cmd.Parameters.AddWithValue("@i", row["ID", DataRowVersion.Original]);
-//             cmd.ExecuteNonQuery();
-//         }
+//        private void DeleteUser(NpgsqlConnection conn, DataRow row)
+//        {
+//            using var cmd = new NpgsqlCommand("DELETE FROM users WHERE id=@i", conn);
+//            cmd.Parameters.AddWithValue("@i", row["ID", DataRowVersion.Original]);
+//            cmd.ExecuteNonQuery();
+//        }
 
-//         private void AddParameters(NpgsqlCommand cmd, DataRow row)
-//         {
-//             cmd.Parameters.AddWithValue("@s", row["surname"]);
-//             cmd.Parameters.AddWithValue("@n", row["name"]);
-//             cmd.Parameters.AddWithValue("@o", row["othcestvo"] == DBNull.Value ? (object)DBNull.Value : row["othcestvo"]);
-//             cmd.Parameters.AddWithValue("@r", row["role_id"]);
-//             cmd.Parameters.AddWithValue("@l", row["login"]);
-//             cmd.Parameters.AddWithValue("@p", row["password"]);
-//             cmd.Parameters.AddWithValue("@c", row["count"]);
-//             cmd.Parameters.AddWithValue("@a", row["active"]);
-//             cmd.Parameters.AddWithValue("@d", row["date"] == DBNull.Value ? (object)DBNull.Value : row["date"]);
-//         }
+//        private void AddParameters(NpgsqlCommand cmd, DataRow row)
+//        {
+//            cmd.Parameters.AddWithValue("@s", row["surname"]);
+//            cmd.Parameters.AddWithValue("@n", row["name"]);
+//            cmd.Parameters.AddWithValue("@o", row["othcestvo"] == DBNull.Value ? (object)DBNull.Value : row["othcestvo"]);
+//            cmd.Parameters.AddWithValue("@r", row["role_id"]);
+//            cmd.Parameters.AddWithValue("@l", row["login"]);
+//            cmd.Parameters.AddWithValue("@p", row["password"]);
+//            cmd.Parameters.AddWithValue("@c", row["count"]);
+//            cmd.Parameters.AddWithValue("@a", row["active"]);
+//            cmd.Parameters.AddWithValue("@d", row["date"] == DBNull.Value ? (object)DBNull.Value : row["date"]);
+//        }
 
-//         private void ClearForm()
-//         {
-//             TextBox1.Text = TextBox2.Text = TextBox3.Text = TextBox4.Text = TextBox5.Text = "";
-//             if (typeRole.Items.Count > 0) typeRole.SelectedIndex = 0;
-//         }
+//        private void ClearForm()
+//        {
+//            TextBox1.Text = TextBox2.Text = TextBox3.Text = TextBox4.Text = TextBox5.Text = "";
+//            if (typeRole.Items.Count > 0) typeRole.SelectedIndex = 0;
+//        }
 
-//         private void buttonClose_Click(object sender, RoutedEventArgs e)
-//         {
-//             Close();
-//         }
+//        private void buttonClose_Click(object sender, RoutedEventArgs e)
+//        {
+//            Close();
+//        }
 
-//         private void buttonDelete_Click(object sender, RoutedEventArgs e)
-//         {
-//             if (GridUser.SelectedItem == null)
-//             {
-//                 MessageBox.Show("Выберите пользователя для удаления", "Ошибка");
-//                 return;
-//             }
+//        private void buttonDelete_Click(object sender, RoutedEventArgs e)
+//        {
+//            if (GridUser.SelectedItem == null)
+//            {
+//                MessageBox.Show("Выберите пользователя для удаления", "Ошибка");
+//                return;
+//            }
 
-//             try
-//             {
-//                 var selectedRow = (DataRowView)GridUser.SelectedItem;
-//                 int userId = (int)selectedRow["ID"];
+//            try
+//            {
+//                var selectedRow = (DataRowView)GridUser.SelectedItem;
+//                int userId = (int)selectedRow["ID"];
 
-//                 using var conn = new NpgsqlConnection(ConnectionString);
-//                 using var cmd = new NpgsqlCommand("DELETE FROM users WHERE id = @id", conn);
-//                 conn.Open();
-//                 cmd.Parameters.AddWithValue("@id", userId);
-//                 cmd.ExecuteNonQuery();
+//                using var conn = new NpgsqlConnection(ConnectionString);
+//                using var cmd = new NpgsqlCommand("DELETE FROM users WHERE id = @id", conn);
+//                conn.Open();
+//                cmd.Parameters.AddWithValue("@id", userId);
+//                cmd.ExecuteNonQuery();
 
-//                 MessageBox.Show("Пользователь успешно удален", "Успех");
-//                 LoadUsers();
-//                 GridUser.SelectedItem = null;
-//             }
-//             catch (Exception ex)
-//             {
-//                 MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка");
-//             }
-//         }
-//     }
-// }
+//                MessageBox.Show("Пользователь успешно удален", "Успех");
+//                LoadUsers();
+//                GridUser.SelectedItem = null;
+//            }
+//            catch (Exception ex)
+//            {
+//                MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка");
+//            }
+//        }
+//    }
+//}
 
 
 // /App.xaml
@@ -714,91 +774,99 @@
 // /CaptchaWindow.xaml
 
 
-// <Window x:Class="Demo.CaptchaWindow"
-//         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-//         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-//         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-//         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-//         xmlns:local="clr-namespace:Demo"
-//         mc:Ignorable="d"
-//         Title="Security" Height="450" Width="800">
-//     <Grid>
-//         <StackPanel Margin="20" VerticalAlignment="Center">
-//             <TextBlock x:Name="captchaText"
-//                FontSize="16"
-//                Margin="0,0,0,10"
-//                TextAlignment="Center" />
+//using System.Reflection.PortableExecutable;
+//using System.Windows.Controls;
+//using System.Windows.Data;
+//using System.Windows.Media;
+//using System.Windows;
 
-//             <TextBox x:Name="txtCaptcha"
-//              FontSize="14"
-//              Margin="0,0,0,10"
-//              HorizontalAlignment="Center"
-//              Width="150"/>
+//using System.Xml.Linq;
+//using System.Security.Claims;
 
-//             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-//                 <Button Content="Подтвердить" Click="Confirm_Click" Margin="5"/>
-//                 <Button Content="Обновить" Click="RefreshCaptcha_Click" Margin="5"/>
-//             </StackPanel>
-//         </StackPanel>
-//     </Grid>
-// </Window>
+//< Window x: Class = "Demo.CaptchaWindow"
+//         xmlns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+//         xmlns: x = "http://schemas.microsoft.com/winfx/2006/xaml"
+//         xmlns: d = "http://schemas.microsoft.com/expression/blend/2008"
+//         xmlns: mc = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+//         xmlns: local = "clr-namespace:Demo"
+//         mc: Ignorable = "d"
+//         Title = "Security" Height = "450" Width = "800" >
+//    < Grid >
+//        < StackPanel Margin = "20" VerticalAlignment = "Center" >
+//            < TextBlock x: Name = "captchaText"
+//                FontSize = "16"
+//                Margin = "0,0,0,10"
+//                TextAlignment = "Center" />
+
+//            < TextBox x: Name = "txtCaptcha"
+//              FontSize = "14"
+//              Margin = "0,0,0,10"
+//              HorizontalAlignment = "Center"
+//              Width = "150" />
+
+//            < StackPanel Orientation = "Horizontal" HorizontalAlignment = "Center" >
+//                < Button Content = "Подтвердить" Click = "Confirm_Click" Margin = "5" />
+//                < Button Content = "Обновить" Click = "RefreshCaptcha_Click" Margin = "5" />
+//            </ StackPanel >
+//        </ StackPanel >
+//    </ Grid >
+//</ Window >
 
 // /CaptchaWindow.xaml.cs
 
-// using System;
-// using System.Linq;
-// using System.Windows;
-// using System.Windows.Controls;
-// using System.Windows.Input;
-// using System.Windows.Media;
+//using System;
+//using System.Linq;
+//using System.Windows;
+//using System.Windows.Controls;
+//using System.Windows.Input;
+//using System.Windows.Media;
 
-// namespace Demo
-// {
-//     public partial class CaptchaWindow : Window
-//     {
-//         public string CaptchaCode { get; private set; }
-//         public string EnteredCode { get; private set; }
+//namespace Demo
+//{
+//    public partial class CaptchaWindow : Window
+//    {
+//        public string CaptchaCode { get; private set; }
+//        public string EnteredCode { get; private set; }
 
-//         private readonly Random rnd = new Random();
+//        private readonly Random rnd = new Random();
 
-//         public CaptchaWindow()
-//         {
-//             InitializeComponent();
-//             GenerateNewCaptcha();
-//         }
+//        public CaptchaWindow()
+//        {
+//            InitializeComponent();
+//            GenerateNewCaptcha();
+//        }
 
-//         private void GenerateNewCaptcha()
-//         {
-//             CaptchaCode = rnd.Next(1000, 9999).ToString();
-//             captchaText.Text = $"Введите код: {CaptchaCode}";
-//             txtCaptcha.Clear();
-//         }
+//        private void GenerateNewCaptcha()
+//        {
+//            CaptchaCode = rnd.Next(1000, 9999).ToString();
+//            captchaText.Text = $"Введите код: {CaptchaCode}";
+//            txtCaptcha.Clear();
+//        }
 
-//         private void Confirm_Click(object sender, RoutedEventArgs e)
-//         {
-//             EnteredCode = txtCaptcha.Text.Trim();
+//        private void Confirm_Click(object sender, RoutedEventArgs e)
+//        {
+//            EnteredCode = txtCaptcha.Text.Trim();
 
-//             if (string.IsNullOrEmpty(EnteredCode))
-//             {
-//                 MessageBox.Show("Введите код!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-//                 return;
-//             }
+//            if (string.IsNullOrEmpty(EnteredCode))
+//            {
+//                MessageBox.Show("Введите код!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+//                return;
+//            }
 
-//             if (EnteredCode != CaptchaCode)
-//             {
-//                 MessageBox.Show("Неверный код. Новая капча сгенерирована.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-//                 GenerateNewCaptcha();
-//                 return;
-//             }
+//            if (EnteredCode != CaptchaCode)
+//            {
+//                MessageBox.Show("Неверный код. Новая капча сгенерирована.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+//                GenerateNewCaptcha();
+//                return;
+//            }
 
-//             DialogResult = true;
-//             Close();
-//         }
+//            DialogResult = true;
+//            Close();
+//        }
 
-//         private void RefreshCaptcha_Click(object sender, RoutedEventArgs e) => GenerateNewCaptcha();
-//     }
-// }
-
+//        private void RefreshCaptcha_Click(object sender, RoutedEventArgs e) => GenerateNewCaptcha();
+//    }
+//}
 
 
 
@@ -860,9 +928,91 @@
 // }
 
 
+//ChangePassword.xaml
+
+//using System.Windows.Controls;
+//using System.Windows;
+
+//using System.Xml.Linq;
+
+//< Window x: Class = "Demo.ChangePassword"
+//        xmlns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+//        xmlns: x = "http://schemas.microsoft.com/winfx/2006/xaml"
+//        xmlns: d = "http://schemas.microsoft.com/expression/blend/2008"
+//        xmlns: mc = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+//        xmlns: local = "clr-namespace:Demo"
+//        mc: Ignorable = "d"
+//        Title = "Window3" Height = "450" Width = "800" >
+//    < Grid >
+//        < Label x: Name = "Label1" Content = "Вы успешно авторизировались. Пожалуйста, измените пароль" HorizontalAlignment = "Center" Height = "40" Margin = "100,16,0,0" VerticalAlignment = "Top" ></ Label >
+//        < Label x: Name = "Label2" Content = "Старый пароль" HorizontalAlignment = "Left" Height = "40" Margin = "148,46,0,0" VerticalAlignment = "Top" ></ Label >
+//        < Label x: Name = "Label3" Content = "Новый пароль" HorizontalAlignment = "Left" Height = "43" Margin = "148,150,0,0" VerticalAlignment = "Top" >
+//        </ Label >
+//        < Label x: Name = "Label4" Content = "Подтвердите пароль" HorizontalAlignment = "Left" Height = "40" Margin = "148,250,0,0" VerticalAlignment = "Top" ></ Label >
+//        < TextBox x: Name = "TextBox3" HorizontalAlignment = "Left" Height = "33" Width = "250" Margin = "148,86,0,0" TextWrapping = "Wrap" VerticalAlignment = "Top" ></ TextBox >
+//        < TextBox x: Name = "TextBox4" HorizontalAlignment = "Left" Height = "33" Width = "250" Margin = "148,190,0,0" TextWrapping = "Wrap" VerticalAlignment = "Top" ></ TextBox >
+//        < TextBox x: Name = "TextBox5" HorizontalAlignment = "Left" Height = "33" Width = "250" Margin = "148,290,0,0" TextWrapping = "Wrap" VerticalAlignment = "Top" ></ TextBox >
+//        < Button x: Name = "button2" Content = "Изменить пароль" HorizontalAlignment = "Left" Height = "45" Width = "200" Margin = "300,350,0,0" VerticalAlignment = "Top" >
+//        </ Button >
+//    </ Grid >
+//</ Window >
 
 
+//ChangePassword.xaml.cs
 
+//using System;
+//using System.Linq;
+//using System.Windows;
+//using System.Windows.Controls;
+//using System.Windows.Input;
+//using System.Windows.Media;
+
+//namespace Demo
+//{
+//    public partial class CaptchaWindow : Window
+//    {
+//        public string CaptchaCode { get; private set; }
+//        public string EnteredCode { get; private set; }
+
+//        private readonly Random rnd = new Random();
+
+//        public CaptchaWindow()
+//        {
+//            InitializeComponent();
+//            GenerateNewCaptcha();
+//        }
+
+//        private void GenerateNewCaptcha()
+//        {
+//            CaptchaCode = rnd.Next(1000, 9999).ToString();
+//            captchaText.Text = $"Введите код: {CaptchaCode}";
+//            txtCaptcha.Clear();
+//        }
+
+//        private void Confirm_Click(object sender, RoutedEventArgs e)
+//        {
+//            EnteredCode = txtCaptcha.Text.Trim();
+
+//            if (string.IsNullOrEmpty(EnteredCode))
+//            {
+//                MessageBox.Show("Введите код!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+//                return;
+//            }
+
+//            if (EnteredCode != CaptchaCode)
+//            {
+//                MessageBox.Show("Неверный код. Новая капча сгенерирована.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+//                GenerateNewCaptcha();
+//                return;
+//            }
+
+//            DialogResult = true;
+//            Close();
+//        }
+
+//        private void RefreshCaptcha_Click(object sender, RoutedEventArgs e) => GenerateNewCaptcha();
+//    }
+//}
 
 
 
